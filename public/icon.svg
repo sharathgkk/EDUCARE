@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="EduCare Logo">
+  <defs>
+    <linearGradient id="ec-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#153B70" />
+      <stop offset="100%" stop-color="#0E2B54" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#ec-bg)" />
+  <rect x="36" y="36" width="440" height="440" rx="84" fill="none" stroke="#38BDF8" stroke-opacity="0.35" stroke-width="10" />
+  <!-- Open Accessible Book -->
+  <path d="M116 184c0-14 11-24 25-24 44 0 85 15 115 39 30-24 71-39 115-39 14 0 25 10 25 24v166c0 12-10 22-22 22-41 0-79 11-118 32-39-21-77-32-118-32-12 0-22-10-22-22V184z" fill="#FFFFFF" />
+  <path d="M256 199v205" stroke="#153B70" stroke-width="12" stroke-linecap="round" />
+  <path d="M150 224h72M150 264h72M150 304h56" stroke="#1D6CE0" stroke-width="14" stroke-linecap="round" />
+  <path d="M290 224h72M290 264h72M290 304h56" stroke="#159B83" stroke-width="14" stroke-linecap="round" />
+  <!-- Inclusive Beacon Spark -->
+  <circle cx="256" cy="122" r="30" fill="#FACC15" />
+  <path d="M256 76v16M256 152v16M210 122h16M286 122h16" stroke="#FACC15" stroke-width="10" stroke-linecap="round" />
+</svg>

@@ -1,0 +1,338 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Helpers ---
+    function isSignedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidRole(role) {
+      return role is string && (role == 'student' || role == 'teacher');
+    }
+
+    function isValidAccessibilityPref(pref) {
+      return pref is string && (pref == 'standard' || pref == 'large-text' || pref == 'voice-nav');
+    }
+
+    function isValidDisabilityProfile(profile) {
+      return profile is string && (
+        profile == 'standard' ||
+        profile == 'deaf' ||
+        profile == 'blind' ||
+        profile == 'no-hands' ||
+        profile == 'ocd' ||
+        profile == 'stammering'
+      );
+    }
+
+    function isValidTeachingProfiles(listVal) {
+      return listVal is list
+        && listVal.size() <= 6
+        && listVal.hasOnly(['standard', 'deaf', 'blind', 'no-hands', 'ocd', 'stammering']);
+    }
+
+    function isTeacherUser() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.portalRole == 'teacher';
+    }
+
+    // --- Entity Validation Blueprints ---
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'uid',
+          'name',
+          'email',
+          'portalRole',
+          'authProvider',
+          'accessibilityPref',
+          'loginCount',
+          'isLoggedIn',
+          'createdAt',
+          'lastLoginAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'name',
+          'email',
+          'photoURL',
+          'portalRole',
+          'authProvider',
+          'accessibilityPref',
+          'disabilityProfile',
+          'teachingProfiles',
+          'loginCount',
+          'isLoggedIn',
+          'createdAt',
+          'lastLoginAt'
+        ])
+        && data.uid is string
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.name is string
+        && data.name.size() >= 1
+        && data.name.size() <= 120
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 200
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500))
+        && isValidRole(data.portalRole)
+        && data.authProvider is string
+        && data.authProvider == 'google'
+        && isValidAccessibilityPref(data.accessibilityPref)
+        && (!('disabilityProfile' in data) || isValidDisabilityProfile(data.disabilityProfile))
+        && (!('teachingProfiles' in data) || isValidTeachingProfiles(data.teachingProfiles))
+        && data.loginCount is int
+        && data.loginCount >= 1
+        && data.loginCount <= 1000000
+        && data.isLoggedIn is bool
+        && data.createdAt is timestamp
+        && data.lastLoginAt is timestamp;
+    }
+
+    function isValidLoginLog(data) {
+      return data.keys().hasAll([
+          'uid',
+          'email',
+          'displayName',
+          'portalRole',
+          'authProvider',
+          'userAgent',
+          'status',
+          'loggedInAt'
+        ])
+        && data.keys().hasOnly([
+          'uid',
+          'email',
+          'displayName',
+          'portalRole',
+          'authProvider',
+          'userAgent',
+          'status',
+          'loggedInAt',
+          'signedOutAt'
+        ])
+        && data.uid is string
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 200
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 120
+        && isValidRole(data.portalRole)
+        && data.authProvider is string
+        && data.authProvider == 'google'
+        && data.userAgent is string
+        && data.userAgent.size() >= 1
+        && data.userAgent.size() <= 300
+        && data.status is string
+        && (data.status == 'active' || data.status == 'signed_out')
+        && data.loggedInAt is timestamp
+        && (!('signedOutAt' in data) || data.signedOutAt is timestamp);
+    }
+
+    function isValidStudyNote(data) {
+      return data.keys().hasAll([
+          'title',
+          'subject',
+          'readTime',
+          'content',
+          'uploadedBy',
+          'teacherUid',
+          'visibility',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'title',
+          'subject',
+          'readTime',
+          'content',
+          'fileName',
+          'uploadedBy',
+          'teacherUid',
+          'targetProfiles',
+          'visibility',
+          'createdAt'
+        ])
+        && data.title is string
+        && data.title.size() >= 1
+        && data.title.size() <= 160
+        && data.subject is string
+        && data.subject.size() >= 1
+        && data.subject.size() <= 80
+        && data.readTime is string
+        && data.readTime.size() >= 1
+        && data.readTime.size() <= 40
+        && data.content is string
+        && data.content.size() >= 1
+        && data.content.size() <= 20000
+        && (!('fileName' in data) || (data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 200))
+        && data.uploadedBy is string
+        && data.uploadedBy.size() >= 1
+        && data.uploadedBy.size() <= 120
+        && data.teacherUid is string
+        && isValidId(data.teacherUid)
+        && data.teacherUid == request.auth.uid
+        && (!('targetProfiles' in data) || isValidTeachingProfiles(data.targetProfiles))
+        && data.visibility is string
+        && data.visibility == 'published'
+        && data.createdAt is timestamp;
+    }
+
+    // --- Collection: /users/{userId} ---
+    match /users/{userId} {
+      // Strictly owner-only PII protection; listing all users is forbidden
+      allow get: if isSignedIn() && isValidId(userId) && isOwner(userId);
+      allow list: if false;
+
+      allow create: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && isOwner(userId)
+        && incoming().loginCount == 1
+        && incoming().isLoggedIn == true
+        && incoming().createdAt == request.time
+        && incoming().lastLoginAt == request.time;
+
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && isOwner(userId)
+        && incoming().uid == existing().uid
+        && incoming().authProvider == existing().authProvider
+        && incoming().createdAt == existing().createdAt
+        && (
+          // Action 1: Record a new login session
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name',
+              'email',
+              'photoURL',
+              'portalRole',
+              'disabilityProfile',
+              'teachingProfiles',
+              'accessibilityPref',
+              'loginCount',
+              'isLoggedIn',
+              'lastLoginAt'
+            ])
+            && incoming().isLoggedIn == true
+            && incoming().loginCount == existing().loginCount + 1
+            && incoming().lastLoginAt == request.time
+          ) ||
+          // Action 2: Mark user signed out
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly(['isLoggedIn'])
+            && incoming().isLoggedIn == false
+          ) ||
+          // Action 3: Update accessibility or teaching profile preferences
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'accessibilityPref',
+              'disabilityProfile',
+              'teachingProfiles'
+            ])
+          )
+        );
+
+      allow delete: if isSignedIn()
+        && isValidId(userId)
+        && isOwner(userId);
+
+      // --- Subcollection: /users/{userId}/loginLogs/{logId} ---
+      match /loginLogs/{logId} {
+        allow get: if isSignedIn()
+          && isValidId(userId)
+          && isValidId(logId)
+          && isOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId));
+
+        // Secure list query: strictly bound to owner & resource.data.uid without get()/exists()
+        allow list: if isSignedIn()
+          && isOwner(userId)
+          && resource.data.uid == request.auth.uid;
+
+        allow create: if isSignedIn()
+          && isValidId(userId)
+          && isValidId(logId)
+          && isValidLoginLog(incoming())
+          && isOwner(userId)
+          && incoming().status == 'active'
+          && !('signedOutAt' in incoming())
+          && incoming().loggedInAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow update: if isSignedIn()
+          && isValidId(userId)
+          && isValidId(logId)
+          && isValidLoginLog(incoming())
+          && isOwner(userId)
+          && existing().status == 'active'
+          && incoming().uid == existing().uid
+          && incoming().authProvider == existing().authProvider
+          && incoming().loggedInAt == existing().loggedInAt
+          && (
+            // Action: Close active session (Terminal State Locking)
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'signedOutAt'])
+            && incoming().status == 'signed_out'
+            && incoming().signedOutAt == request.time
+          )
+          && exists(/databases/$(database)/documents/users/$(userId));
+
+        allow delete: if isSignedIn()
+          && isValidId(userId)
+          && isValidId(logId)
+          && isOwner(userId)
+          && exists(/databases/$(database)/documents/users/$(userId));
+      }
+    }
+
+    // --- Collection: /studyNotes/{noteId} ---
+    match /studyNotes/{noteId} {
+      // Published notes are readable by authenticated students and teachers until deleted by the teacher
+      allow get: if isSignedIn()
+        && isValidId(noteId)
+        && existing().visibility == 'published';
+
+      // Secure list query: strictly enforces published visibility without get()/exists()
+      allow list: if isSignedIn()
+        && resource.data.visibility == 'published';
+
+      allow create: if isSignedIn()
+        && isValidId(noteId)
+        && isValidStudyNote(incoming())
+        && incoming().createdAt == request.time
+        && isTeacherUser();
+
+      allow update: if false;
+
+      allow delete: if isSignedIn()
+        && isValidId(noteId)
+        && existing().teacherUid == request.auth.uid
+        && isTeacherUser();
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": " AI in Education",
+  "description": "An AI-powered inclusive learning platform providing accessible educational tools for students with physical disabilities and health conditions.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

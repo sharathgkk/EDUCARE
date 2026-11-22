@@ -1,0 +1,246 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user profile and login status stored in Firestore.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the user."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Display name of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 200,
+          "description": "Verified email address of the user."
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Optional Google profile photo URL."
+        },
+        "portalRole": {
+          "type": "string",
+          "enum": ["student", "teacher"],
+          "description": "Selected EduCare portal experience."
+        },
+        "authProvider": {
+          "type": "string",
+          "enum": ["google"],
+          "description": "Authentication provider used for login."
+        },
+        "accessibilityPref": {
+          "type": "string",
+          "enum": ["standard", "large-text", "voice-nav"],
+          "description": "Preferred accessibility setting."
+        },
+        "disabilityProfile": {
+          "type": "string",
+          "enum": ["standard", "deaf", "blind", "no-hands", "ocd", "stammering"],
+          "description": "Optional playful learning support profile chosen during student sign-up."
+        },
+        "teachingProfiles": {
+          "type": "array",
+          "description": "Optional list of up to 6 learning superpower profiles a teacher specializes in teaching."
+        },
+        "loginCount": {
+          "type": "number",
+          "description": "Total number of recorded logins for this user."
+        },
+        "isLoggedIn": {
+          "type": "boolean",
+          "description": "Whether the user currently has an active session."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the account was first created."
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of the most recent login or session update."
+        }
+      },
+      "required": [
+        "uid",
+        "name",
+        "email",
+        "portalRole",
+        "authProvider",
+        "accessibilityPref",
+        "loginCount",
+        "isLoggedIn",
+        "createdAt",
+        "lastLoginAt"
+      ]
+    },
+    "LoginLog": {
+      "title": "LoginLog",
+      "description": "Immutable audit record of an individual login session for a user.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 200,
+          "description": "Verified email address used to log in."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Display name at the time of login."
+        },
+        "portalRole": {
+          "type": "string",
+          "enum": ["student", "teacher"],
+          "description": "Portal selected during this login."
+        },
+        "authProvider": {
+          "type": "string",
+          "enum": ["google"],
+          "description": "Authentication provider used."
+        },
+        "userAgent": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300,
+          "description": "Truncated browser user agent string."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "signed_out"],
+          "description": "Session lifecycle status; signed_out is terminal."
+        },
+        "loggedInAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the login occurred."
+        },
+        "signedOutAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Optional server timestamp when the session was signed out."
+        }
+      },
+      "required": [
+        "uid",
+        "email",
+        "displayName",
+        "portalRole",
+        "authProvider",
+        "userAgent",
+        "status",
+        "loggedInAt"
+      ]
+    },
+    "StudyNote": {
+      "title": "StudyNote",
+      "description": "Accessible study note attached by a teacher and persisted for students until deleted by the teacher.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "description": "Title of the study note."
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80,
+          "description": "Academic subject category."
+        },
+        "readTime": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40,
+          "description": "Estimated reading time label."
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20000,
+          "description": "Full accessible text content of the study note."
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "Optional original file name if uploaded from a text file."
+        },
+        "uploadedBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "Display name of the teacher who published the note."
+        },
+        "teacherUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the publishing teacher."
+        },
+        "targetProfiles": {
+          "type": "array",
+          "description": "Optional list of up to 6 student learning superpower profiles this note is intended for."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["published"],
+          "description": "Publication state readable by authenticated students and teachers."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the note was published."
+        }
+      },
+      "required": [
+        "title",
+        "subject",
+        "readTime",
+        "content",
+        "uploadedBy",
+        "teacherUid",
+        "visibility",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user profile and login metadata document, accessible only by the authenticated owner."
+    },
+    "/users/{userId}/loginLogs/{logId}": {
+      "schema": { "$ref": "#/entities/LoginLog" },
+      "description": "Private subcollection recording each login event for the authenticated owner."
+    },
+    "/studyNotes/{noteId}": {
+      "schema": { "$ref": "#/entities/StudyNote" },
+      "description": "Shared study notes published from the Teacher Portal and persisted for the Student Portal until deleted by the teacher."
+    }
+  }
+}
